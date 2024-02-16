@@ -136,7 +136,6 @@ class PngPlot(pg.PlotWidget):
                 kwargs["symbolBrush"] = None
                 kwargs["symbolPen"] = None
                 kwargs["xArrayLinSorted"] = 0
-        print(kwargs)
         if "name" in kwargs:
             dsname = kwargs["name"]
         else:
@@ -208,7 +207,6 @@ class PngPlot(pg.PlotWidget):
             # y2  =0.8*ymax+0.2*ymin
 
     def list_data_set(self):
-        print("Brabo")
         return
 
     def del_from_graph(self):
