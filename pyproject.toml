@@ -1,0 +1,40 @@
+[tool.poetry]
+name = "pynavgui"
+version = "0.1.0"
+description = "Some wrappers around pyqtgraph to navigate smoothly through large datasets"
+authors = ["Martin Rieu <martin.rieu@physics.ox.ac.uk>"]
+readme = "README.md"
+license ='GPL-3.0'
+
+[tool.poetry.dependencies]
+python = "^3.10"
+superqt = "^0.6.1"
+pyqt6-charts = "^6.6.0"
+pyqtgraph = "^0.13.3"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.black]
+line-length = 88
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "E704"]
