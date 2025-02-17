@@ -2,6 +2,7 @@
 from PyQt6 import QtWidgets, QtGui
 from .ds_style_menu import dsStyleMenu
 from .input_f import InputF
+from .utils.ds_utils import active_ds_utils
 
 
 class RDSMenu(QtWidgets.QMenu):
@@ -19,6 +20,13 @@ class RDSMenu(QtWidgets.QMenu):
         nameaction.triggered.connect(self.set_ds_name)
         self.addAction(nameaction)
         self.addMenu(dsStyleMenu("Style", parent=self, PDs=PDs))
+
+        utils_menu = QtWidgets.QMenu("Utils", self)
+        for util_name, util_func in active_ds_utils.items():
+            action = QtGui.QAction(util_name, self)
+            action.triggered.connect(lambda _, func=util_func: func(PDs))
+            utils_menu.addAction(action)
+        self.addMenu(utils_menu)
 
     def set_ds_name(self):
         (s,) = InputF(

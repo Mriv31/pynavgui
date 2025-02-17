@@ -13,7 +13,7 @@ class PngViewBox(pg.ViewBox):  # Subclass ViewBox
         self.parentplot = parentplot
         self.myMenuEdit()
 
-    def autoRangeY(self, padding=None, items=None, item=None):
+    def autoRangeY(self, yspan=None, padding=None, items=None, item=None):
         if item is None:
             bounds = self.childrenBoundingRect(items=items)
         else:
@@ -21,7 +21,11 @@ class PngViewBox(pg.ViewBox):  # Subclass ViewBox
 
         if bounds is not None:
             co = bounds.getCoords()
-            self.setYRange(co[1], co[3], padding=padding)
+            if yspan is None:
+                self.setYRange(co[1], co[3], padding=padding)
+            else:
+                middle = (co[1] + co[3]) / 2
+                self.setYRange(middle - yspan / 2, middle + yspan / 2, padding=padding)
 
     def keyPressEvent(self, ev):
         ev.accept()

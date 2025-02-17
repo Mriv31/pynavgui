@@ -52,6 +52,32 @@ class PngDs(pg.PlotDataItem):
                     False  # locks displayed array to find them later
                 )
 
+    def get_x_min(self):
+        if self._dataset is not None and self._dataset.x is not None:
+            if "xArrayLinSorted" in self.prop and self.prop["xArrayLinSorted"]:
+                return self._dataset.x[0]
+            else:
+                return np.min(self._dataset.x)
+        return None
+
+    def get_x_max(self):
+        if self._dataset is not None and self._dataset.x is not None:
+            if "xArrayLinSorted" in self.prop and self.prop["xArrayLinSorted"]:
+                return self._dataset.x[-1]
+            else:
+                return np.max(self._dataset.x)
+        return None
+
+    def get_y_min(self):
+        if self._dataset is not None and self._dataset.y is not None:
+            return np.min(self._dataset.y)
+        return None
+
+    def get_y_max(self):
+        if self._dataset is not None and self._dataset.y is not None:
+            return np.max(self._dataset.y)
+        return None
+
     def change_point_color(self, c):
         self.setSymbolPen(c)
         self.prop["SymbolPen"] = c

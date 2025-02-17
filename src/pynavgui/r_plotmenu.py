@@ -1,6 +1,7 @@
 # This Python file uses the following encoding: utf-8
 from PyQt6 import QtWidgets, QtGui
 from .action_style import MenuStyler
+from .utils.plot_utils import active_plot_utils
 
 
 class DsSelectMenu(QtWidgets.QMenu):
@@ -30,3 +31,9 @@ class RPlotMenu(QtWidgets.QMenu):
         self.addAction(remove_active_plot)
 
         self.addMenu(DsSelectMenu("Select active data set", self, plot))
+        utils_menu = QtWidgets.QMenu("Utils", self)
+        for util_name, util_func in active_plot_utils.items():
+            action = QtGui.QAction(util_name, self)
+            action.triggered.connect(lambda _, func=util_func: func(plot))
+            utils_menu.addAction(action)
+        self.addMenu(utils_menu)
