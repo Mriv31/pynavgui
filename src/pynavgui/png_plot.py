@@ -12,8 +12,11 @@ pg.setConfigOption("background", "w")
 pg.setConfigOption("foreground", "k")
 
 
+color_list = ["b", "g", "r", "c", "m", "y", "k"]
+
+
 class PngPlot(pg.PlotWidget):
-    def __init__(self, parentgraph=None, parentgrid=None, x=None, y=None, **kwargs):
+    def __init__(self, parentplotregion=None, x=None, y=None, **kwargs):
         pg.setConfigOption("useOpenGL", 0)
         vb = PngViewBox(parentplot=self)
         if "title" in kwargs:
@@ -22,8 +25,7 @@ class PngPlot(pg.PlotWidget):
             title = None
         super(PngPlot, self).__init__(title=title, viewBox=vb)
 
-        self.parentgraph = parentgraph
-        self.parentgrid = parentgrid
+        self.parentplotregion = parentplotregion
         self.dsnb_auto = 0
         self.active_dataset = None
         self.dsl = []  # contains the list of ds
@@ -31,6 +33,7 @@ class PngPlot(pg.PlotWidget):
         self.set_cross_hair()
         self.addLegend()
         self.CustomizeMenu()
+        self.i_color = 0
 
         if "file" in kwargs and kwargs["file"] is not None:
             self.init_from_file(kwargs["file"], kwargs["inds"], kwargs["inde"])
@@ -54,8 +57,11 @@ class PngPlot(pg.PlotWidget):
         self.setLabel("left", text=self.prop["ytitle"], units=self.prop["yunits"])
         self.setLabel("bottom", text=self.prop["xtitle"], units=self.prop["xunits"])
         self.setLogMode(self.prop["logx"], self.prop["logy"])
-
         self.add_ds(x, y, **kwargs)
+
+    @property
+    def parentgrid(self):
+        return self.parentplotregion.parentgrid
 
     def init_from_file(self, f, inds, inde):
         self.prop = dict(f[f.files[inds]])
@@ -78,7 +84,7 @@ class PngPlot(pg.PlotWidget):
         self.dsmenu = self.menu.addMenu(RDSMenu("Cur. Dataset", self.menu, self))
 
         # save = self.menu.addAction("Save all")
-        # save.triggered.connect(self.parentgraph.save)
+        # save.triggered.connect(self.parentplotregion.save)
 
     def reload_DSMenu(self):
         self.menu.removeAction(self.dsmenu)
@@ -104,7 +110,19 @@ class PngPlot(pg.PlotWidget):
             self.active_dataset = ds
             self.reload_DSMenu()
 
-    def add_ds(self, x, y, **kwargs):
+    def remove_active_dataset(self):
+        if self.active_dataset is not None:
+            self.dsl.remove(self.active_dataset)
+        self.removeItem(self.active_dataset)
+
+    def get_next_color(self):
+        color = color_list[self.i_color % len(color_list)]
+        self.i_color += 1
+        return color
+
+    def add_ds(self, x, y, like=None, **kwargs):
+        if like is not None:
+            kwargs = like.prop
         if "xArrayLinSorted" in kwargs and kwargs["xArrayLinSorted"] == 1:
             self.setClipToView(True)
             self.enableAutoRange(False)
@@ -141,8 +159,14 @@ class PngPlot(pg.PlotWidget):
         else:
             dsname = "Dataset " + str(self.dsnb_auto)
         self.dsnb_auto += 1
-        if "pen" not in kwargs:
-            kwargs["pen"] = pg.intColor(len(self.dsl))
+        if ("pen" not in kwargs or kwargs["pen"] is None) and (
+            "symbolPen" not in kwargs or kwargs["symbolPen"] is None
+        ):
+            kwargs["pen"] = self.get_next_color()
+        # elif "pen" in kwargs and kwargs["pen"] is not None:
+        #     kwargs["pen"] = self.get_next_color()
+        # elif "symbolPen" in kwargs and kwargs["symbolPen"] is not None:
+        #     kwargs["symbolPen"] = self.get_next_color()
         if "name" in kwargs:
             newds = PngDs(parentplot=self, **kwargs, clickable=True)
             newds.setData(x=x, y=y)
@@ -174,7 +198,14 @@ class PngPlot(pg.PlotWidget):
     def mouseMoved(self, evt):
         if self.parentgrid is not None and self.parentgrid.png_instance is not None:
             self.parentgrid.png_instance.active_plot = self
-            self.parentgrid.png_instance.active_plot_region = self.parentgraph
+            self.parentgrid.png_instance.active_plot_region = self.parentplotregion
+            if self.parentplotregion is None:
+                print("No parentplotregion")
+        elif self.parentgrid is None:
+            print("No parentgrid")
+        elif self.parentgrid.png_instance is None:
+            print("parent grid has no png_instance")
+
         pos = evt[0]  # using signal proxy turns original arguments into a tuple
         if self.sceneBoundingRect().contains(pos):
             mousePoint = self.plotItem.vb.mapSceneToView(pos)
@@ -189,13 +220,13 @@ class PngPlot(pg.PlotWidget):
                 vy = 10 ** (vy)
 
             if self.active_dataset is not None:
-                self.parentgraph.graphstatusbar.setText(
+                self.parentplotregion.graphstatusbar.setText(
                     " X {0:.2e} Y : {1:.2e} Active dataset is {2}".format(
                         vx, vy, self.active_dataset.prop["name"]
                     )
                 )
             else:
-                self.parentgraph.graphstatusbar.setText(
+                self.parentplotregion.graphstatusbar.setText(
                     " X {0:.2e} Y : {1:.2e}".format(vx, vy)
                 )
 
@@ -210,11 +241,11 @@ class PngPlot(pg.PlotWidget):
         return
 
     def del_from_graph(self):
-        if self.parentgraph is not None:
+        if self.parentplotregion is not None:
             if self.parentgrid.png_instance.active_plot == self:
                 self.parentgrid.png_instance.active_plot = None
                 self.parentgrid.png_instance.active_plot_region = None
-            self.parentgraph.remove_plot(self)
+            self.parentplotregion.remove_plot(self)
 
     def save(self, indstart):
         h = [np.array(list(self.prop.items())), 0]

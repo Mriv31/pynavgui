@@ -8,9 +8,6 @@ class PngDs(pg.PlotDataItem):
     def __init__(self, parentplot=None, params=None, **kwargs):
         super(PngDs, self).__init__(**kwargs)
 
-        parentplot.addItem(self)
-        self.sigClicked.connect(partial(parentplot.set_active_dataset, self))
-        self.parentplot = parentplot
         properties = [
             "name",
             "source",
@@ -30,15 +27,9 @@ class PngDs(pg.PlotDataItem):
 
         self.prop = dict(zip(properties, values))
 
-        if self._dataset is not None:
-            if self._dataset.x is not None:
-                self._dataset.x.flags.writeable = (
-                    False  # locks displayed array to find them later
-                )
-            if self._dataset.y is not None:
-                self._dataset.y.flags.writeable = (
-                    False  # locks displayed array to find them later
-                )
+        parentplot.addItem(self)
+        self.sigClicked.connect(partial(parentplot.set_active_dataset, self))
+        self.parentplot = parentplot
 
     def setData(self, **kwargs):
         super(PngDs, self).setData(**kwargs)
@@ -51,6 +42,27 @@ class PngDs(pg.PlotDataItem):
                 self._dataset.y.flags.writeable = (
                     False  # locks displayed array to find them later
                 )
+
+            if self.prop["xArrayLinSorted"]:
+                self.set_xArrayLinSorted()
+
+    def y_data(self):
+        return self._dataset.y
+
+    def x_data(self):
+        return self._dataset.x
+
+    def set_xArrayLinSorted(self):
+        if self.prop is None or self._dataset is None:
+            return
+        self.prop["xArrayLinSorted"] = True
+        self.x_inc = self._dataset.x[1] - self._dataset.x[0]
+        self.x_0 = self._dataset.x[0]
+
+    def unset_xArrayLinSorted(self):
+        self.prop["xArrayLinSorted"] = False
+        self.x_inc = None
+        self.x_0 = None
 
     def get_x_min(self):
         if self._dataset is not None and self._dataset.x is not None:
@@ -67,6 +79,35 @@ class PngDs(pg.PlotDataItem):
             else:
                 return np.max(self._dataset.x)
         return None
+
+    def get_visible_data(self):
+        xmin, xmax = self.parentplot.viewRange()[0]
+        x = self._dataset.x
+        y = self._dataset.y
+        if x is None or y is None:
+            return None
+        if "xArrayLinSorted" in self.prop and self.prop["xArrayLinSorted"]:
+            ind1 = int((xmin - self.x_0) / self.x_inc)
+            ind2 = int((xmax - self.x_0) / self.x_inc)
+            return x[ind1:ind2], y[ind1:ind2]
+        else:
+            x2 = x[(x >= xmin) & (x <= xmax)]
+            y2 = y[(x >= xmin) & (x <= xmax)]
+            return x2, y2
+
+    def get_ybound_in_range(self, xmin, xmax):
+        x = self._dataset.x
+        y = self._dataset.y
+        if x is None or y is None:
+            return None
+        if "xArrayLinSorted" in self.prop and self.prop["xArrayLinSorted"]:
+            ind1 = int((xmin - self.x_0) / self.x_inc)
+            ind2 = int((xmax - self.x_0) / self.x_inc)
+            y = y[ind1:ind2]
+        else:
+            x = x[(x >= xmin) & (x <= xmax)]
+            y = y[(x >= xmin) & (x <= xmax)]
+        return np.min(y), np.max(y)
 
     def get_y_min(self):
         if self._dataset is not None and self._dataset.y is not None:

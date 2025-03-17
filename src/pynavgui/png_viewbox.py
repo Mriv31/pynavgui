@@ -2,6 +2,7 @@
 import pyqtgraph as pg
 from PyQt6 import QtGui
 from PyQt6 import QtCore
+import time
 
 # You can edit the contextual menu here by modifying myMenuEdit. Note that the PlotItem class and other parents of the ViewBox with a method "getContextMenus" also add their own
 # actions every time the viewboxmenu is called. You can override this actions by override those classes.
@@ -14,17 +15,30 @@ class PngViewBox(pg.ViewBox):  # Subclass ViewBox
         self.myMenuEdit()
 
     def autoRangeY(self, yspan=None, padding=None, items=None, item=None):
-        if item is None:
-            bounds = self.childrenBoundingRect(items=items)
-        else:
-            bounds = self.mapFromItemToView(item, item.boundingRect()).boundingRect()
+        ranges = self.viewRange()
+        xr = ranges[0]
+        xstart, xend = xr
+        ymin = None
+        ymax = None
+        for ds in self.parentplot.dsl:
+            if ds.isVisible():
+                yminh, ymaxh = ds.get_ybound_in_range(xstart, xend)
 
-        if bounds is not None:
-            co = bounds.getCoords()
+                if ymin is None or yminh < ymin:
+                    ymin = yminh
+                if ymax is None or ymaxh > ymax:
+                    ymax = ymaxh
+        # if item is None:
+        #     bounds = self.childrenBoundingRect(items=items)
+        # else:
+        #     bounds = self.mapFromItemToView(item, item.boundingRect()).boundingRect()
+
+        if ymin is not None and ymax is not None:
             if yspan is None:
-                self.setYRange(co[1], co[3], padding=padding)
+                self.setYRange(ymin, ymax, padding=padding)
+                self.setYRange(ymin, ymax, padding=padding)
             else:
-                middle = (co[1] + co[3]) / 2
+                middle = (ymin + ymax) / 2
                 self.setYRange(middle - yspan / 2, middle + yspan / 2, padding=padding)
 
     def keyPressEvent(self, ev):
@@ -39,7 +53,7 @@ class PngViewBox(pg.ViewBox):  # Subclass ViewBox
             xr = ranges[0]
             xsize = xr[1] - xr[0]
             self.setXRange(
-                xr[0] + xsize * 0.3, xr[1] + xsize * 0.3, update=True, padding=0
+                xr[0] + xsize * 0.3, xr[1] + xsize * 0.3, update=False, padding=0
             )
 
             self.autoRangeY()
@@ -49,7 +63,7 @@ class PngViewBox(pg.ViewBox):  # Subclass ViewBox
             xr = ranges[0]
             xsize = xr[1] - xr[0]
             self.setXRange(
-                xr[0] - xsize * 0.3, xr[1] - xsize * 0.3, update=True, padding=0
+                xr[0] - xsize * 0.3, xr[1] - xsize * 0.3, update=False, padding=0
             )
             self.autoRangeY()
         elif ev.key() == QtCore.Qt.Key.Key_Up:
@@ -57,7 +71,7 @@ class PngViewBox(pg.ViewBox):  # Subclass ViewBox
             xr = ranges[0]
             xsize = xr[1] - xr[0]
             self.setXRange(
-                xr[0] + xsize * 0.3, xr[1] - xsize * 0.3, update=True, padding=0
+                xr[0] + xsize * 0.3, xr[1] - xsize * 0.3, update=False, padding=0
             )
             self.autoRangeY()
         elif ev.key() == QtCore.Qt.Key.Key_Down:
@@ -65,7 +79,7 @@ class PngViewBox(pg.ViewBox):  # Subclass ViewBox
             xr = ranges[0]
             xsize = xr[1] - xr[0]
             self.setXRange(
-                xr[0] - xsize * 0.3, xr[1] + xsize * 0.3, update=True, padding=0
+                xr[0] - xsize * 0.3, xr[1] + xsize * 0.3, update=False, padding=0
             )
             self.autoRangeY()
         else:

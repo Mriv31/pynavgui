@@ -53,15 +53,13 @@ class PngPlotRegion(QtWidgets.QWidget):
         self.add_plot(**kwargs)
 
     def add_plot(self, **kwargs):
-        if "parentgrid" not in kwargs and self.parentgrid is not None:
-            kwargs["parentgrid"] = self.parentgrid
 
         if "plotname" in kwargs:
             plotname = kwargs["plotname"]
         else:
             plotname = "plot" + str(self.plot_inc)
             self.plot_inc += 1
-        ploth = PngPlot(parentgraph=self, plotname=plotname, **kwargs)
+        ploth = PngPlot(parentplotregion=self, plotname=plotname, **kwargs)
         self.plotl.append(ploth)
         self.tab.addTab(ploth, plotname)
         self.tab.setCurrentWidget(ploth)
@@ -94,8 +92,7 @@ class PngPlotRegion(QtWidgets.QWidget):
         for i in range(ind_plots_data.shape[0]):
             inds, inde = ind_plots_data[i, :]
             ploth = PngPlot(
-                parentgraph=self,
-                parentgrid=self.parentgrid,
+                parentplotregion=self,
                 file=f,
                 inds=inds,
                 inde=inde,

@@ -75,7 +75,7 @@ def create_movie_from_plot(
     if not ok:
         return
     
-      use_constant_yspan, ok = QInputDialog.getItem(
+    use_constant_yspan, ok = QInputDialog.getItem(
         None,
         "Y Span Option",
         "Use constant Y span?",
