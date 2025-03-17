@@ -8,8 +8,6 @@ license ='GPL-3.0'
 
 [tool.poetry.dependencies]
 python = "^3.10"
-superqt = "^0.6.1"
-pyqt6-charts = "^6.6.0"
 pyqtgraph = "^0.13.7"
 ruptures = "^1.1.9"
 numba  = "^0.61.0"
